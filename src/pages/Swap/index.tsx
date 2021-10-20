@@ -48,6 +48,11 @@ import { useIsSelectedAEBToken, useSelectedTokenList } from '../../state/lists/h
 import { DeprecatedWarning } from '../../components/Warning'
 import { isTokenOnList } from '../../utils'
 
+// limit orders
+import { SwapType } from './type'
+import SwapTab from '../../components/swap/SwapTab'
+import CurrentRateInputPanel from '../../components/swap/CurrentRateInputPanel'
+
 const TopText = styled.span`
   margin-bottom: 8px;
   font-size: 18px;
@@ -289,10 +294,26 @@ export default function Swap() {
 
   const selectedTokens = useSelectedTokenList()
 
-  const isTrustedToken = useCallback((token: Token) => {
-    if (!chainId || !selectedTokens) return true // Assume trusted at first to avoid flashing a warning
-    return TRUSTED_TOKEN_ADDRESSES[chainId].includes(token.address) || isTokenOnList(selectedTokens, token)
-  }, [chainId, selectedTokens])
+  const isTrustedToken = useCallback(
+    (token: Token) => {
+      if (!chainId || !selectedTokens) return true // Assume trusted at first to avoid flashing a warning
+      return TRUSTED_TOKEN_ADDRESSES[chainId].includes(token.address) || isTokenOnList(selectedTokens, token)
+    },
+    [chainId, selectedTokens]
+  )
+
+  // limit orders
+  const [swapType, setSwapType] = useState<SwapType>('market')
+  const [currentRate, setCurrentRate] = useState<string>('')
+
+  const handleCurrentRate = () => {
+    // get current rate
+    setCurrentRate('123')
+  }
+
+  const handleCurrentRateInput = (value: string) => {
+    setCurrentRate(value)
+  }
 
   return (
     <>
@@ -308,17 +329,22 @@ export default function Swap() {
         </WarningWrapper>
       )}
 
-      <TopText>
-        <Trans i18nKey="swapPage.velox">
-          Set a limit order on
-          <VeloxLink href={'https://app.velox.global/'} target={'_blank'}>
-            Velox
-          </VeloxLink>
-        </Trans>
-      </TopText>
+      {!swapType && (
+        <TopText>
+          <Trans i18nKey="swapPage.velox">
+            Set a limit order on
+            <VeloxLink href={'https://app.velox.global/'} target={'_blank'}>
+              Velox
+            </VeloxLink>
+          </Trans>
+        </TopText>
+      )}
 
       <AppBody>
         <SwapPoolTabs active={'swap'} />
+
+        <SwapTab type={swapType} setSwapType={setSwapType} />
+
         <Wrapper id="swap-page">
           <ConfirmSwapModal
             isOpen={showConfirm}
@@ -335,6 +361,11 @@ export default function Swap() {
           />
 
           <AutoColumn gap={'md'}>
+            <CurrentRateInputPanel
+              value={currentRate}
+              onUserInput={handleCurrentRateInput}
+              onGetCurrentRate={handleCurrentRate}
+            />
             <CurrencyInputPanel
               label={
                 independentField === Field.OUTPUT && !showWrap && trade
